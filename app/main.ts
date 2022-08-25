@@ -9,7 +9,16 @@ const payerKeypair = anchor.web3.Keypair.fromSecretKey(
     )
 );
                 // string with number inside
-const main = async (game_id: string) => {
+const createGameAccount = async (
+        gameBufferRelayer: anchor.web3.PublicKey,
+        game_id: string,
+        sport_id: string,
+        max_liquidity: number,
+        participant_a_id: string,
+        participant_b_id: string,
+        participant_a_name: string,
+        participant_b_name: string
+    ) => {
     const provider = new anchor.AnchorProvider(
         // https://api.mainnet.solana.com/  for mainnet
         new anchor.web3.Connection("https://api.devnet.solana.com", {
@@ -40,20 +49,46 @@ const main = async (game_id: string) => {
     );
 
     await program.methods
-        .initializeGame(new anchor.BN(game_id))
+        .initializeGame(
+            new anchor.BN(game_id),
+            new anchor.BN(sport_id),
+            new anchor.BN(max_liquidity),
+            new anchor.BN(participant_a_id),
+            new anchor.BN(participant_b_id),
+            participant_a_name,
+            participant_b_name,
+        )
         .accounts({
             admin: payerKeypair.publicKey,
             state: state,
-            game: game,
+            event: game,
+            eventBufferRelayer: gameBufferRelayer,
             systemProgram: anchor.web3.SystemProgram.programId,
         })
         .signers([payerKeypair])
         .rpc(provider.connection)
 
     console.log("Game: ", game.toString())
+    console.log("Game: ", await program.account.divvyEvent.fetch(game))
 }
 
-
-main("11111111111").then( () => {
+// EXAMPLE
+const game_id = "11111111111";
+const sport_id = "11111111";
+const max_liquidity = 100;
+const participant_a_id = "11111111";
+const participant_b_id = "11111111";
+const participant_a_name = "participant_a_name";
+const participant_b_name = "participant_b_name";
+createGameAccount(
+    new anchor.web3.PublicKey("CVyArpPrMec1Z6dGVkCnNs8NeGDXioABCVs2QSRSSGZb"),
+    game_id,
+    sport_id,
+    max_liquidity,
+    participant_a_id,
+    participant_b_id,
+    participant_a_name,
+    participant_b_name
+).then( () => {
     console.log("Successfully created!");
 })
